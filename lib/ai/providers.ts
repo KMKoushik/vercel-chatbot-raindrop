@@ -1,6 +1,12 @@
 import { anthropic } from "@ai-sdk/anthropic";
 import { openai } from "@ai-sdk/openai";
-import { customProvider, gateway, type LanguageModel } from "ai";
+import {
+  customProvider,
+  defaultSettingsMiddleware,
+  gateway,
+  type LanguageModel,
+  wrapLanguageModel,
+} from "ai";
 import { isTestEnvironment } from "../constants";
 import { titleModel } from "./models";
 
@@ -28,7 +34,14 @@ function directModel(): LanguageModel | null {
     return null;
   }
   if (process.env.OPENAI_API_KEY) {
-    return openai(process.env.CHAT_MODEL ?? "gpt-6-luna");
+    // store: false sends the whole conversation each turn. With stored responses, later turns refer back to items by
+    // id, which fails for OpenAI orgs with zero data retention.
+    return wrapLanguageModel({
+      middleware: defaultSettingsMiddleware({
+        settings: { providerOptions: { openai: { store: false } } },
+      }),
+      model: openai(process.env.CHAT_MODEL ?? "gpt-6-luna"),
+    });
   }
   if (process.env.ANTHROPIC_API_KEY) {
     return anthropic(process.env.CHAT_MODEL ?? "claude-sonnet-5-5");
