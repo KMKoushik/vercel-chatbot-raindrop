@@ -5,6 +5,7 @@ import Credentials from "next-auth/providers/credentials";
 import { DUMMY_PASSWORD } from "@/lib/constants";
 import { createGuestUser, getUser } from "@/lib/db/queries";
 import { authConfig } from "./auth.config";
+import { AUTH_SECRET } from "@/lib/auth-secret";
 
 export type UserType = "guest" | "regular";
 
@@ -36,6 +37,7 @@ export const {
   signIn,
   signOut,
 } = NextAuth({
+  secret: AUTH_SECRET,
   ...authConfig,
   callbacks: {
     jwt({ token, user }) {

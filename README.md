@@ -34,9 +34,23 @@
 - [Auth.js](https://authjs.dev)
   - Simple and secure authentication
 
-## Raindrop
+## Raindrop test agent: quick start
 
-Every chat turn is sent to [Raindrop](https://raindrop.ai) as a `chat_message` event, with its trace: the model calls, tool calls and tool results. Set `RAINDROP_WRITE_KEY` in `.env.local` to turn it on; without it nothing is sent. The integration is in `lib/ai/raindrop.ts` and the chat route (`app/(chat)/api/chat/route.ts`).
+This fork of [vercel/chatbot](https://github.com/vercel/chatbot) runs with no database and sends every chat turn to [Raindrop](https://raindrop.ai). It is meant for trying Raindrop Simulations.
+
+1. Fork this repository, then clone your fork.
+2. Copy `.env.example` to `.env.local` and set the two keys: `AI_GATEWAY_API_KEY` and `RAINDROP_WRITE_KEY`.
+3. Run it (needs Node 22+; `corepack` provides the right pnpm):
+
+   ```bash
+   corepack pnpm install
+   corepack pnpm dev
+   ```
+
+4. Open http://localhost:3000 and chat. You are signed in as a guest. Ask about the weather, or ask it to write an essay, some code or a spreadsheet, so its tools run.
+5. Each turn appears in Raindrop as a `chat_message` event. Then connect GitHub in Raindrop, pick your fork, and build the agent's World.
+
+Chats, users and documents are kept in memory (`lib/db/queries.ts`) and are gone when the server restarts. The Raindrop integration is in `lib/ai/raindrop.ts` and the chat route (`app/(chat)/api/chat/route.ts`).
 
 ## Model Providers
 
