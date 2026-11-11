@@ -5,9 +5,12 @@ import {
   createUIMessageStreamResponse,
   generateId,
   isStepCount,
-  streamText,
   toUIMessageStream,
 } from "ai";
+import {
+  eventMetadata,
+  runWithRaindropCallMetadata,
+} from "@raindrop-ai/ai-sdk";
 import { checkBotId } from "botid/server";
 import { after } from "next/server";
 import { createResumableStreamContext } from "resumable-stream";
@@ -23,12 +26,12 @@ import {
 } from "@/lib/ai/models";
 import { type RequestHints, systemPrompt } from "@/lib/ai/prompts";
 import { getLanguageModel } from "@/lib/ai/providers";
+import { streamText } from "@/lib/ai/raindrop";
 import { createDocument } from "@/lib/ai/tools/create-document";
 import { editDocument } from "@/lib/ai/tools/edit-document";
 import { getWeather } from "@/lib/ai/tools/get-weather";
 import { requestSuggestions } from "@/lib/ai/tools/request-suggestions";
 import { updateDocument } from "@/lib/ai/tools/update-document";
-import { isProductionEnvironment } from "@/lib/constants";
 import {
   createStreamId,
   deleteChatById,
@@ -266,67 +269,78 @@ export async function POST(request: Request) {
           clearHealthCheckTimer();
         };
 
-        const result = streamText({
-          activeTools:
-            isReasoningModel && !supportsTools
-              ? []
-              : [
-                  "getWeather",
-                  "createDocument",
-                  "editDocument",
-                  "updateDocument",
-                  "requestSuggestions",
-                ],
-          instructions: systemPrompt({ requestHints, supportsTools }),
-          messages: modelMessages,
-          model: getLanguageModel(chatModel),
-          onAbort() {
-            stopWaitingStatus();
-          },
-          onChunk({ chunk }) {
-            if (isModelStreamActivity(chunk)) {
-              markModelActive();
-            }
-          },
-          onEnd() {
-            stopWaitingStatus();
-          },
-          onError() {
-            stopWaitingStatus();
-          },
-          providerOptions: {
-            ...(modelConfig?.gatewayOrder && {
-              gateway: { order: modelConfig.gatewayOrder },
-            }),
-            ...(modelConfig?.reasoningEffort && {
-              openai: { reasoningEffort: modelConfig.reasoningEffort },
+        // Raindrop reads the turn's user and conversation from this scope (AI SDK v7 telemetry has no metadata field).
+        const result = runWithRaindropCallMetadata(
+          {
+            rawMetadata: eventMetadata({
+              convoId: id,
+              eventName: "chat_message",
+              userId: session.user.id,
             }),
           },
-          stopWhen: isStepCount(5),
-          telemetry: {
-            functionId: "stream-text",
-            isEnabled: isProductionEnvironment,
-          },
-          tools: {
-            createDocument: createDocument({
-              dataStream,
-              modelId: chatModel,
-              session,
-            }),
-            editDocument: editDocument({ dataStream, session }),
-            getWeather,
-            requestSuggestions: requestSuggestions({
-              dataStream,
-              modelId: chatModel,
-              session,
-            }),
-            updateDocument: updateDocument({
-              dataStream,
-              modelId: chatModel,
-              session,
-            }),
-          },
-        });
+          () =>
+            streamText({
+              activeTools:
+                isReasoningModel && !supportsTools
+                  ? []
+                  : [
+                      "getWeather",
+                      "createDocument",
+                      "editDocument",
+                      "updateDocument",
+                      "requestSuggestions",
+                    ],
+              instructions: systemPrompt({ requestHints, supportsTools }),
+              messages: modelMessages,
+              model: getLanguageModel(chatModel),
+              onAbort() {
+                stopWaitingStatus();
+              },
+              onChunk({ chunk }) {
+                if (isModelStreamActivity(chunk)) {
+                  markModelActive();
+                }
+              },
+              onEnd() {
+                stopWaitingStatus();
+              },
+              onError() {
+                stopWaitingStatus();
+              },
+              providerOptions: {
+                ...(modelConfig?.gatewayOrder && {
+                  gateway: { order: modelConfig.gatewayOrder },
+                }),
+                ...(modelConfig?.reasoningEffort && {
+                  openai: { reasoningEffort: modelConfig.reasoningEffort },
+                }),
+              },
+              stopWhen: isStepCount(5),
+              telemetry: {
+                functionId: "stream-text",
+                isEnabled: true,
+              },
+              tools: {
+                createDocument: createDocument({
+                  dataStream,
+                  modelId: chatModel,
+                  session,
+                }),
+                editDocument: editDocument({ dataStream, session }),
+                getWeather,
+                requestSuggestions: requestSuggestions({
+                  dataStream,
+                  modelId: chatModel,
+                  session,
+                }),
+                updateDocument: updateDocument({
+                  dataStream,
+                  modelId: chatModel,
+                  session,
+                }),
+              },
+            })
+        );
 
         dataStream.merge(
           toUIMessageStream({

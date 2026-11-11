@@ -34,6 +34,10 @@
 - [Auth.js](https://authjs.dev)
   - Simple and secure authentication
 
+## Raindrop
+
+Every chat turn is sent to [Raindrop](https://raindrop.ai) as a `chat_message` event, with its trace: the model calls, tool calls and tool results. Set `RAINDROP_WRITE_KEY` in `.env.local` to turn it on; without it nothing is sent. The integration is in `lib/ai/raindrop.ts` and the chat route (`app/(chat)/api/chat/route.ts`).
+
 ## Model Providers
 
 This template uses the [Vercel AI Gateway](https://vercel.com/docs/ai-gateway) to access multiple AI models through a unified interface. Models are configured in `lib/ai/models.ts` with per-model provider routing. Included models: Mistral, Moonshot, DeepSeek, OpenAI, and xAI.
