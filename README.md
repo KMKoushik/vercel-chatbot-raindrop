@@ -1,89 +1,67 @@
 <a href="https://chatbot.ai-sdk.dev/demo">
   <img alt="Chatbot" src="app/(chat)/opengraph-image.png">
-  <h1 align="center">Chatbot</h1>
+  <h1 align="center">Chatbot + Raindrop</h1>
 </a>
 
 <p align="center">
-    Chatbot (formerly AI Chatbot) is a free, open-source template built with Next.js and the AI SDK that helps you quickly build powerful chatbot applications.
-</p>
-
-<p align="center">
-  <a href="https://chatbot.ai-sdk.dev/docs"><strong>Read Docs</strong></a> ·
-  <a href="#features"><strong>Features</strong></a> ·
-  <a href="#model-providers"><strong>Model Providers</strong></a> ·
-  <a href="#deploy-your-own"><strong>Deploy Your Own</strong></a> ·
-  <a href="#running-locally"><strong>Running locally</strong></a>
+  Vercel's open-source <a href="https://github.com/vercel/chatbot">Chatbot</a> template, integrated with <a href="https://raindrop.ai">Raindrop</a>. Every chat turn is sent to Raindrop with its full trace: model calls, tool calls and tool results. Use it to try Raindrop end to end, including Simulations.
 </p>
 <br/>
 
-## Features
-
-- [Next.js](https://nextjs.org) App Router
-  - Advanced routing for seamless navigation and performance
-  - React Server Components (RSCs) and Server Actions for server-side rendering and increased performance
-- [AI SDK](https://ai-sdk.dev/docs/introduction)
-  - Unified API for generating text, structured objects, and tool calls with LLMs
-  - Hooks for building dynamic chat and generative user interfaces
-  - Supports OpenAI, Anthropic, Google, xAI, and other model providers via AI Gateway
-- [shadcn/ui](https://ui.shadcn.com)
-  - Styling with [Tailwind CSS](https://tailwindcss.com)
-  - Component primitives from [Radix UI](https://radix-ui.com) for accessibility and flexibility
-- Data Persistence
-  - [Neon Serverless Postgres](https://vercel.com/marketplace/neon) for saving chat history and user data
-  - [Vercel Blob](https://vercel.com/storage/blob) for efficient file storage
-- [Auth.js](https://authjs.dev)
-  - Simple and secure authentication
-
-## Raindrop test agent: quick start
-
-This fork of [vercel/chatbot](https://github.com/vercel/chatbot) runs with no database and sends every chat turn to [Raindrop](https://raindrop.ai). It is meant for trying Raindrop Simulations.
+## Quick start
 
 1. Fork this repository, then clone your fork.
-2. Copy `.env.example` to `.env.local` and set two keys: `RAINDROP_WRITE_KEY`, and one model key: `OPENAI_API_KEY`, `ANTHROPIC_API_KEY` or `AI_GATEWAY_API_KEY`. With an OpenAI or Anthropic key every chat uses that provider (`CHAT_MODEL` picks the model); with an AI Gateway key the model picker works.
-3. Run it (needs Node 22+; `corepack` provides the right pnpm):
+2. Copy `.env.example` to `.env.local` and set two keys:
+   - `RAINDROP_WRITE_KEY`: your Raindrop write key.
+   - One model key: `OPENAI_API_KEY`, `ANTHROPIC_API_KEY` or `AI_GATEWAY_API_KEY`.
+3. Run it (Node 22 or later; `corepack` provides the right pnpm):
 
    ```bash
    corepack pnpm install
    corepack pnpm dev
    ```
 
-4. Open http://localhost:3000 and chat. You are signed in as a guest. Ask about the weather, or ask it to write an essay, some code or a spreadsheet, so its tools run.
-5. Each turn appears in Raindrop as a `chat_message` event. Then connect GitHub in Raindrop, pick your fork, and build the agent's World.
+4. Open [localhost:3000](http://localhost:3000) and chat. You are signed in as a guest. Ask about the weather, or ask it to write an essay, some code or a spreadsheet, so its tools run.
+5. Each turn shows up in Raindrop as a `chat_message` event.
 
-Chats, users and documents are kept in memory (`lib/db/queries.ts`) and are gone when the server restarts. The Raindrop integration is in `lib/ai/raindrop.ts` and the chat route (`app/(chat)/api/chat/route.ts`).
+No database is needed: chats, users and documents are kept in memory and are gone when the server restarts.
 
-## Model Providers
+## Try Raindrop Simulations
 
-This template uses the [Vercel AI Gateway](https://vercel.com/docs/ai-gateway) to access multiple AI models through a unified interface. Models are configured in `lib/ai/models.ts` with per-model provider routing. Included models: Mistral, Moonshot, DeepSeek, OpenAI, and xAI.
+Once your Raindrop project has a few `chat_message` events:
 
-### AI Gateway Authentication
+1. In Raindrop, open Simulations and connect GitHub with your fork.
+2. Pick the chatbot agent and let Raindrop build its World.
+3. Open a pull request that changes the agent, for example its system prompt in `lib/ai/prompts.ts`, and Raindrop replays recent conversations against your change.
 
-**For Vercel deployments**: Authentication is handled automatically via OIDC tokens.
+## How the Raindrop integration works
 
-**For non-Vercel deployments**: You need to provide an AI Gateway API key by setting the `AI_GATEWAY_API_KEY` environment variable in your `.env.local` file.
+- `lib/ai/raindrop.ts` creates the Raindrop client and wraps the AI SDK's `streamText` (AI SDK v7 native telemetry).
+- `app/(chat)/api/chat/route.ts` sends each turn as a `chat_message` event, with the signed-in user as the user and the chat id as the conversation.
+- Nothing is sent when `RAINDROP_WRITE_KEY` is unset.
 
-With the [AI SDK](https://ai-sdk.dev/docs/introduction), you can also switch to direct LLM providers like [OpenAI](https://openai.com), [Anthropic](https://anthropic.com), [Cohere](https://cohere.com/), and [many more](https://ai-sdk.dev/providers/ai-sdk-providers) with just a few lines of code.
+## Models
 
-## Deploy Your Own
+- `OPENAI_API_KEY`: every chat uses OpenAI, `gpt-6-luna` by default.
+- `ANTHROPIC_API_KEY`: every chat uses Anthropic, `claude-sonnet-5-5` by default.
+- `AI_GATEWAY_API_KEY`: chats go through the [Vercel AI Gateway](https://vercel.com/docs/ai-gateway), and the model picker in the UI chooses the model. It takes precedence over the other two.
 
-You can deploy your own version of Chatbot to Vercel with one click:
+Set `CHAT_MODEL` to use another OpenAI or Anthropic model. The provider setup is in `lib/ai/providers.ts`.
 
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/templates/next.js/chatbot)
+## Optional settings
 
-## Running locally
+- `AUTH_SECRET`: signs session cookies. A built-in development value is used when unset; set your own when you deploy.
+- `BLOB_READ_WRITE_TOKEN`: enables file uploads ([Vercel Blob](https://vercel.com/docs/vercel-blob)).
+- `REDIS_URL`: enables resumable streams ([Redis](https://vercel.com/docs/redis)).
 
-You will need to use the environment variables [defined in `.env.example`](.env.example) to run Chatbot. It's recommended you use [Vercel Environment Variables](https://vercel.com/docs/projects/environment-variables) for this, but a `.env` file is all that is necessary.
+## Features
 
-> Note: You should not commit your `.env` file or it will expose secrets that will allow others to control access to your various AI and authentication provider accounts.
+- [Next.js](https://nextjs.org) App Router with React Server Components and Server Actions
+- [AI SDK](https://ai-sdk.dev/docs/introduction): text generation, tool calls and chat hooks
+- Tools: current weather, and creating, editing and reviewing documents, code and spreadsheets
+- [shadcn/ui](https://ui.shadcn.com) with [Tailwind CSS](https://tailwindcss.com) and [Radix UI](https://radix-ui.com)
+- [Auth.js](https://authjs.dev) guest and email sign-in
 
-1. Install Vercel CLI: `npm i -g vercel`
-2. Link local instance with Vercel and GitHub accounts (creates `.vercel` directory): `vercel link`
-3. Download your environment variables: `vercel env pull`
+## License
 
-```bash
-pnpm install
-pnpm db:migrate # Setup database or apply latest database changes
-pnpm dev
-```
-
-Your app template should now be running on [localhost:3000](http://localhost:3000).
+Apache 2.0, from [vercel/chatbot](https://github.com/vercel/chatbot). See [LICENSE](LICENSE).
