@@ -1,3 +1,4 @@
+// biome-ignore-all lint/suspicious/useAwait: keeps the async API of the database layer it replaces, so callers are unchanged.
 import "server-only";
 
 import type { ArtifactKind } from "@/components/chat/artifact";
@@ -32,15 +33,18 @@ type Store = {
 const globalStore = globalThis as typeof globalThis & {
   __chatbotStore?: Store;
 };
-const store: Store = (globalStore.__chatbotStore ??= {
-  users: [],
-  chats: [],
-  messages: [],
-  votes: [],
-  documents: [],
-  suggestions: [],
-  streams: [],
-});
+if (!globalStore.__chatbotStore) {
+  globalStore.__chatbotStore = {
+    chats: [],
+    documents: [],
+    messages: [],
+    streams: [],
+    suggestions: [],
+    users: [],
+    votes: [],
+  };
+}
+const store: Store = globalStore.__chatbotStore;
 
 const byCreatedAsc = <T extends { createdAt: Date }>(a: T, b: T) =>
   a.createdAt.getTime() - b.createdAt.getTime();

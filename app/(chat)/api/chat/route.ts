@@ -1,3 +1,7 @@
+import {
+  eventMetadata,
+  runWithRaindropCallMetadata,
+} from "@raindrop-ai/ai-sdk";
 import { geolocation, ipAddress } from "@vercel/functions";
 import {
   convertToModelMessages,
@@ -7,10 +11,6 @@ import {
   isStepCount,
   toUIMessageStream,
 } from "ai";
-import {
-  eventMetadata,
-  runWithRaindropCallMetadata,
-} from "@raindrop-ai/ai-sdk";
 import { checkBotId } from "botid/server";
 import { after } from "next/server";
 import { createResumableStreamContext } from "resumable-stream";

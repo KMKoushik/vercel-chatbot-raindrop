@@ -1,5 +1,6 @@
-import * as ai from "ai";
 import { createRaindropAISDK } from "@raindrop-ai/ai-sdk";
+// biome-ignore lint/performance/noNamespaceImport: Raindrop wraps the whole AI SDK module.
+import * as ai from "ai";
 
 /**
  * Raindrop observability. Every chat turn is sent as a `chat_message` event with its trace (model calls, tool calls
