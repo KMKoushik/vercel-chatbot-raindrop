@@ -39,7 +39,7 @@
 This fork of [vercel/chatbot](https://github.com/vercel/chatbot) runs with no database and sends every chat turn to [Raindrop](https://raindrop.ai). It is meant for trying Raindrop Simulations.
 
 1. Fork this repository, then clone your fork.
-2. Copy `.env.example` to `.env.local` and set the two keys: `AI_GATEWAY_API_KEY` and `RAINDROP_WRITE_KEY`.
+2. Copy `.env.example` to `.env.local` and set two keys: `RAINDROP_WRITE_KEY`, and one model key: `OPENAI_API_KEY`, `ANTHROPIC_API_KEY` or `AI_GATEWAY_API_KEY`. With an OpenAI or Anthropic key every chat uses that provider (`CHAT_MODEL` picks the model); with an AI Gateway key the model picker works.
 3. Run it (needs Node 22+; `corepack` provides the right pnpm):
 
    ```bash

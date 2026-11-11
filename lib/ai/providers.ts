@@ -1,4 +1,6 @@
-import { customProvider, gateway } from "ai";
+import { anthropic } from "@ai-sdk/anthropic";
+import { openai } from "@ai-sdk/openai";
+import { customProvider, gateway, type LanguageModel } from "ai";
 import { isTestEnvironment } from "../constants";
 import { titleModel } from "./models";
 
@@ -17,17 +19,34 @@ export const myProvider = isTestEnvironment
     })()
   : null;
 
+/**
+ * With AI_GATEWAY_API_KEY (or on Vercel) the model picker's choice runs through the AI Gateway. Without it, every
+ * model call uses your own OpenAI or Anthropic key directly: CHAT_MODEL, or a default model of that provider.
+ */
+function directModel(): LanguageModel | null {
+  if (process.env.AI_GATEWAY_API_KEY || process.env.VERCEL_OIDC_TOKEN) {
+    return null;
+  }
+  if (process.env.OPENAI_API_KEY) {
+    return openai(process.env.CHAT_MODEL ?? "gpt-6-luna");
+  }
+  if (process.env.ANTHROPIC_API_KEY) {
+    return anthropic(process.env.CHAT_MODEL ?? "claude-sonnet-5-5");
+  }
+  return null;
+}
+
 export function getLanguageModel(modelId: string) {
   if (isTestEnvironment && myProvider) {
     return myProvider.languageModel(modelId);
   }
 
-  return gateway.languageModel(modelId);
+  return directModel() ?? gateway.languageModel(modelId);
 }
 
 export function getTitleModel() {
   if (isTestEnvironment && myProvider) {
     return myProvider.languageModel("title-model");
   }
-  return gateway.languageModel(titleModel.id);
+  return directModel() ?? gateway.languageModel(titleModel.id);
 }
